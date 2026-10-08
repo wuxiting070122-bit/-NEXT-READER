@@ -1,0 +1,44 @@
+'use strict';
+const {test}=require('node:test');const assert=require('node:assert/strict');const {spawn}=require('node:child_process');const {mkdtemp,rm}=require('node:fs/promises');const os=require('node:os');const path=require('node:path');
+test('accounts isolate lending and notes, enforce ownership, and preserve legacy records',async()=>{
+ const dir=await mkdtemp(path.join(os.tmpdir(),'bookloop-auth-'));
+ const file=path.join(dir,'test.db');
+ const {Database}=require('node-sqlite3-wasm');const database=new Database(file);
+ database.exec("CREATE TABLE digital_loans(id INTEGER PRIMARY KEY,resource_id TEXT NOT NULL,borrowed_at TEXT DEFAULT CURRENT_TIMESTAMP,returned_at TEXT); INSERT INTO digital_loans(resource_id) VALUES('alice'); CREATE TABLE digital_annotations(id TEXT PRIMARY KEY,resource_id TEXT,version TEXT,paragraph INTEGER,start INTEGER,end INTEGER,quote TEXT,note TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP); INSERT INTO digital_annotations(id,resource_id,note) VALUES('legacy','pride','private legacy');");database.close();
+ const child=spawn(process.execPath,['app.js'],{env:{...process.env,LIBRARY_DB:file,PORT:'0'}});
+ try{
+ const base=await new Promise((resolve,reject)=>{let output='';const timer=setTimeout(()=>reject(Error('timeout')),10000);child.stdout.on('data',x=>{output+=x;const m=output.match(/Listening on port (\d+)/);if(m){clearTimeout(timer);resolve('http://127.0.0.1:'+m[1]);}});});
+ const client=()=>{let cookie='';return async(url,method='GET',body)=>{const r=await fetch(base+url,{method,headers:{Cookie:cookie,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});if(r.headers.get('set-cookie'))cookie=r.headers.get('set-cookie').split(';')[0];return {status:r.status,data:await r.json()};};};
+ const a=client(),b=client(),guest=client();const account={username:'Reader_A',password:'reader-password-123'};
+ assert.equal((await guest('/api/digital/loans/pride','POST')).status,401);
+ assert.equal((await guest('/api/digital/history')).status,401);
+ assert.equal((await guest('/api/account/register','POST',{username:'x',password:'short'})).status,400);
+ assert.equal((await a('/api/account/register','POST',account)).data.user.username,'reader_a');
+ assert.equal((await b('/api/account/register','POST',{...account,username:'reader_a'})).status,409);
+ assert.equal((await b('/api/account/login','POST',{...account,password:'wrong-password'})).status,401);
+ assert.equal((await b('/api/account/register','POST',{...account,username:'reader_b'})).status,200);
+ const book=(await a('/api/digital/resources')).data.find(x=>x.id==='pride');
+ require('node:child_process').execFileSync(process.execPath,['scripts/set-admin.js','reader_a'],{env:{...process.env,LIBRARY_DB:file}});
+ Object.assign(book,(await a('/api/digital/resources/pride','PUT',{...book,tags:book.tags.join(','),content:book.paragraphs.join('\n\n'),lending:'limited',seats:1,loanDays:14})).data);
+ assert.equal((await a('/api/digital/loans/pride','POST')).status,200);
+ assert.equal((await b('/api/digital/loans/pride','POST')).status,409);
+ assert.equal((await b('/api/digital/loans/pride','DELETE')).status,403);
+ assert.equal((await a('/api/digital/resources')).data.find(x=>x.id==='pride').borrowedByMe,true);
+ assert.equal((await b('/api/digital/resources')).data.find(x=>x.id==='pride').borrowedByMe,false);
+ assert.equal((await a('/api/digital/history')).data.length,1);assert.equal((await b('/api/digital/history')).data.length,0);
+ const note={version:book.version,paragraph:0,start:0,end:10,quote:book.paragraphs[0].slice(0,10),note:'only reader a'};
+ assert.equal((await b('/api/digital/annotations/pride','POST',note)).status,409);
+ const saved=await a('/api/digital/annotations/pride','POST',note);assert.equal(saved.status,200);
+ assert.equal((await a('/api/digital/annotations/pride')).data.length,1);
+ assert.deepEqual((await b('/api/digital/annotations/pride')).data,[]);assert.deepEqual((await guest('/api/digital/annotations/pride')).data,[]);
+ assert.equal((await b('/api/digital/annotation/'+saved.data.id,'DELETE')).status,404);
+ assert.equal((await a('/api/digital/loans/alice','DELETE')).status,403);
+ await a('/api/account/logout','POST');assert.equal((await a('/api/digital/loans/pride','DELETE')).status,401);
+ assert.equal((await a('/api/account/login','POST',account)).status,200);
+ assert.equal((await a('/api/digital/loans/pride','DELETE')).status,200);
+ assert.equal((await b('/api/digital/loans/pride','POST')).status,200);
+ assert.deepEqual((await b('/api/digital/annotations/pride')).data,[]);
+ assert.equal((await a('/api/digital/annotations/pride')).data.length,1);
+ const check=new Database(file);const users=check.all('SELECT password_hash FROM digital_users');assert.equal(users.length,2);assert.ok(users.every(u=>!u.password_hash.includes(account.password)&&u.password_hash.length===161));assert.equal(check.all("SELECT note FROM digital_annotations WHERE id='legacy'")[0].note,'private legacy');check.close();
+ }finally{await new Promise(resolve=>{child.once('exit',resolve);child.kill();});await rm(dir,{recursive:true,force:true});}
+});

@@ -1,0 +1,66 @@
+'use strict';
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const {spawn,execFileSync}=require('node:child_process');const {mkdtemp,rm}=require('node:fs/promises');const path=require('node:path'),os=require('node:os');const {Database}=require('node-sqlite3-wasm');
+test('community end-to-end, moderation, versions, seats, progress and admin protection',async()=>{
+ const dir=await mkdtemp(path.join(os.tmpdir(),'bookloop-community-')),file=path.join(dir,'test.db');
+ const child=spawn(process.execPath,['app.js'],{env:{...process.env,LIBRARY_DB:file,PORT:'0'}});
+ try{
+ const base=await new Promise((resolve,reject)=>{let output='';const timer=setTimeout(()=>reject(Error('startup timeout')),10000);child.stdout.on('data',x=>{output+=x;const m=output.match(/Listening on port (\d+)/);if(m){clearTimeout(timer);resolve('http://127.0.0.1:'+m[1]);}});});
+ const client=()=>{let cookie='';return async(url,method='GET',body)=>{const r=await fetch(base+url,{method,headers:{Cookie:cookie,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});if(r.headers.get('set-cookie'))cookie=r.headers.get('set-cookie').split(';')[0];return {status:r.status,data:await r.json()};};};
+ const admin=client(),a=client(),b=client(),guest=client();
+ for(const [c,username] of [[admin,'test_admin'],[a,'reader_alpha'],[b,'reader_beta']])assert.equal((await c('/api/account/register','POST',{username,password:'Test-only-password'})).status,200);
+ execFileSync(process.execPath,['scripts/set-admin.js','test_admin'],{env:{...process.env,LIBRARY_DB:file}});
+ assert.equal((await a('/seed','POST',{})).status,403);assert.equal((await guest('/init','POST',{})).status,401);
+ const resourceBody={title:'Test resource',kind:'ebook',url:'https://example.org/read',tags:'REPAIR,REUSE',lending:'limited',seats:1,loanDays:7,content:'## First\n\nA repair may help.\n\n## Second\n\nEvidence is needed.'};
+ assert.equal((await a('/api/digital/resources','POST',resourceBody)).status,403);
+ const created=await admin('/api/digital/resources','POST',resourceBody);assert.equal(created.status,200);const r=created.data;assert.deepEqual(r.chapters,[{title:'First',start:0},{title:'Second',start:1}]);
+ const pathR='/api/digital/resources/'+r.id;
+ const attempts=await Promise.all([a('/api/digital/loans/'+r.id,'POST'),b('/api/digital/loans/'+r.id,'POST')]);assert.deepEqual(attempts.map(x=>x.status).sort(),[200,409]);
+ const owner=attempts[0].status===200?a:b,waiter=owner===a?b:a;
+ assert.equal((await waiter('/api/digital/reservations/'+r.id,'POST')).status,200);
+ assert.equal((await owner('/api/digital/loans/'+r.id+'/renew','POST')).status,409);
+ assert.equal((await admin(pathR,'PUT',{...resourceBody,seats:2})).status,409);
+ assert.equal((await owner('/api/digital/loans/'+r.id,'DELETE')).status,200);
+ assert.equal((await owner('/api/digital/loans/'+r.id,'POST')).status,409);
+ assert.equal((await waiter('/api/digital/notifications')).data[0].kind,'reservation');
+ assert.equal((await waiter('/api/digital/loans/'+r.id,'POST')).status,200);
+ assert.equal((await waiter('/api/digital/loans/'+r.id+'/renew','POST')).status,200);
+ assert.equal((await waiter('/api/digital/loans/'+r.id+'/renew','POST')).status,409);
+ // Expiry preserves annotations/history and releases seats on the next request.
+ const db=new Database(file);db.run("UPDATE digital_loans SET due_at='2000-01-01 00:00:00' WHERE resource_id=? AND returned_at IS NULL",[r.id]);db.close();
+ assert.equal((await waiter('/api/digital/resources')).data.find(x=>x.id===r.id).borrowedByMe,false);
+ assert.ok((await waiter('/api/digital/notifications')).data.some(n=>n.kind==='expiry'));
+ // Open books allow both users to read and retain private annotations independently.
+ assert.equal((await a('/api/digital/loans/pride','POST')).status,200);assert.equal((await b('/api/digital/loans/pride','POST')).status,200);
+ const resource=(await a('/api/digital/resources')).data.find(r=>r.id==='repair-reading');
+ const anchor={version:resource.version,paragraph:0,start:0,end:8,quote:resource.paragraphs[0].slice(0,8)};
+ const posted={...anchor,kind:'question',body:'What condition matters?',publish:true};
+ assert.equal((await guest('/api/digital/discussions/repair-reading','POST',posted)).status,401);
+ assert.equal((await a('/api/digital/discussions/repair-reading','POST',{...posted,quote:'wrong'})).status,400);
+ assert.equal((await a('/api/digital/discussions/repair-reading','POST',{...posted,publish:false})).status,400);
+ const d=(await a('/api/digital/discussions/repair-reading','POST',posted)).data;
+ assert.ok(d.id);assert.equal((await b('/api/digital/discussions/repair-reading')).data[0].mine,false);
+ assert.equal((await b('/api/digital/discussion/'+d.id+'/status','POST',{status:'resolved'})).status,403);
+ assert.equal((await b('/api/digital/discussion/'+d.id+'/replies','POST',{body:'An unsupported answer'})).status,400);
+ assert.equal((await b('/api/digital/discussion/'+d.id+'/replies','POST',{body:'Unsafe link',source_url:'javascript:alert(1)'})).status,400);
+ const reply=await b('/api/digital/discussion/'+d.id+'/replies','POST',{body:'See the condition in paragraph two.',source_location:'Paragraph 2'});assert.equal(reply.status,200);
+ const discussion=(await a('/api/digital/discussions/repair-reading')).data[0];assert.equal(discussion.replies.length,1);
+ const notifications=(await a('/api/digital/notifications')).data;assert.ok(notifications.some(n=>n.kind==='reply'));
+ const n=notifications.find(n=>n.kind==='reply');await b('/api/digital/notifications/'+n.id+'/read','POST');assert.equal((await a('/api/digital/notifications')).data.find(x=>x.id===n.id).read_at,null);
+ await a('/api/digital/notifications/'+n.id+'/read','POST');assert.ok((await a('/api/digital/notifications')).data.find(x=>x.id===n.id).read_at);
+ await a('/api/digital/reply/'+reply.data.id+'/helpful','POST',{});await a('/api/digital/reply/'+reply.data.id+'/helpful','POST',{});assert.equal((await a('/api/digital/discussions/repair-reading')).data[0].replies[0].helpful,1);
+ await a('/api/digital/discussion/'+d.id+'/status','POST',{status:'disputed'});assert.equal((await a('/api/digital/community-feed')).data[0].status,'disputed');
+ await a('/api/digital/progress/repair-reading','PUT',{version:resource.version,paragraph:2});assert.equal((await a('/api/digital/progress/repair-reading')).data.paragraph,2);assert.deepEqual((await b('/api/digital/progress/repair-reading')).data,{});
+ assert.equal((await a('/api/digital/progress/repair-reading','PUT',{version:'old',paragraph:2})).status,400);
+ const note=(await a('/api/digital/annotations/repair-reading','POST',{...anchor,note:'Private'})).data;await a('/api/digital/annotation/'+note.id,'PUT',{note:'Edited private note'});assert.equal((await b('/api/digital/annotation/'+note.id,'PUT',{note:'Hijack'})).status,404);assert.equal((await a('/api/digital/annotations/repair-reading')).data[0].note,'Edited private note');
+ const revised=await admin('/api/digital/resources/repair-reading','PUT',{...resource,tags:resource.tags.join(','),content:resource.paragraphs.join('\n\n')+'\n\nA new paragraph.'});assert.equal(revised.status,200);assert.notEqual(revised.data.version,resource.version);assert.equal((await a('/api/digital/discussions/repair-reading')).data[0].version,resource.version);
+ assert.equal((await a('/api/digital/discussions/repair-reading','POST',posted)).status,400);
+ await a('/api/digital/practice/repair-reading','POST',{before:'I assumed certainty.',after:'Now I see a condition.',action:'Check the intended use.'});assert.equal((await a('/api/digital/practice')).data.length,1);assert.equal((await b('/api/digital/practice')).data.length,0);
+ assert.equal((await a('/api/digital/admin/metrics')).status,403);
+ await a('/api/digital/reports','POST',{type:'reply',id:reply.data.id,reason:'Check supporting evidence'});const reports=(await admin('/api/digital/admin/reports')).data;assert.equal(reports[0].content,'See the condition in paragraph two.');await admin('/api/digital/admin/reports/'+reports[0].id,'POST',{action:'hide'});assert.equal((await a('/api/digital/discussions/repair-reading')).data[0].replies.length,0);
+ const metrics=(await admin('/api/digital/admin/metrics')).data;assert.equal(metrics.discussions,1);assert.equal(metrics.answered,0);assert.equal(metrics.practice,1);
+ assert.equal((await b('/api/digital/community/discussion/'+d.id,'DELETE')).status,403);await a('/api/digital/community/discussion/'+d.id,'DELETE');assert.equal((await b('/api/digital/discussions/repair-reading')).data.length,0);
+ await a('/api/digital/loans/'+r.id,'POST');await admin(pathR+'/visibility','POST',{archived:true});assert.equal((await a('/api/digital/resources')).data.some(x=>x.id===r.id),false);assert.equal((await b('/api/digital/loans/'+r.id,'POST')).status,410);assert.equal((await a('/api/digital/loans/'+r.id,'DELETE')).status,200);
+ await admin(pathR+'/visibility','POST',{archived:false});assert.equal((await a('/api/digital/resources')).data.some(x=>x.id===r.id),true);
+ }finally{await new Promise(resolve=>{child.once('exit',resolve);child.kill();});await rm(dir,{recursive:true,force:true});}
+});

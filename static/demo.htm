@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="qgikn83TubrR46OMZxQgOZ">
+<head data-page-node-id="EUYhJOZxgwF4qExVlPl5gH">
+<meta charset="UTF-8" data-page-node-id="XnXbECjMrpYXuzomlSKUtJ">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="eH6cOCKv2cNNTiNHUJo5Gg">
+<title>图书馆管理系统 · 功能演示</title>
+<style>
+  :root{
+    --ink:#1F4E5F; --ink-soft:#3E7C5F; --accent:#B5482F;
+    --paper:#F7F4EC; --card:#FFFFFF; --line:#DFD8C8; --text:#2C2A26; --muted:#7A7367;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--text);
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;font-size:14px;line-height:1.6}
+  header{background:var(--ink);color:#F7F4EC;padding:22px 28px}
+  header h1{margin:0;font-size:20px;letter-spacing:1px}
+  header p{margin:6px 0 0;font-size:13px;opacity:.8}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 60px}
+  .tip{background:#FFF8E8;border:1px solid var(--line);border-left:4px solid var(--accent);
+    padding:12px 16px;border-radius:4px;margin-bottom:22px;font-size:13px}
+  .tip b{color:var(--accent)}
+  h2{font-size:15px;margin:26px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--line);color:var(--ink)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px}
+  .card.wide{grid-column:1 / -1}
+  .card h3{margin:0 0 4px;font-size:14px;color:var(--ink)}
+  .card .api{font-size:12px;color:var(--muted);font-family:ui-monospace,Menlo,monospace;margin-bottom:12px}
+  .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+  label .req{color:var(--accent)}
+  input{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:4px;
+    background:#FCFAF5;font-size:13px;color:var(--text);font-family:inherit}
+  input:focus{outline:none;border-color:var(--ink-soft)}
+  button{background:var(--ink);color:#F7F4EC;border:none;border-radius:4px;padding:7px 16px;
+    font-size:13px;cursor:pointer;font-family:inherit}
+  button:hover{background:var(--ink-soft)}
+  button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  button.ghost:hover{background:#EFEAE0}
+  button.warn{background:var(--accent)}
+  .out{margin-top:10px;font-size:13px;display:none;overflow-x:auto}
+  .out .msg{padding:7px 10px;border-radius:4px}
+  .out.ok .msg{background:#EAF3EC;color:#2E6B45;border:1px solid #C9E2D2}
+  .out.err .msg{background:#FCEDEA;color:#9E3B23;border:1px solid #F0CFC7}
+  .out table{border-collapse:collapse;width:100%;margin-top:8px;font-size:12px;background:#FCFAF5}
+  .out th,.out td{border:1px solid var(--line);padding:5px 8px;text-align:left}
+  .out th{background:#EFEAE0;color:var(--ink);white-space:nowrap}
+  .out .empty{color:var(--muted);font-size:12px;padding:6px 0}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:40px}
+  footer a{color:var(--ink)}
+</style>
+</head>
+<body data-page-node-id="hn1uTxVUg2t7LCsuY8jGZG">
+<header data-page-node-id="UXGLJMyYreoH6RUhDfgJGL">
+  <a href="/research.html" style="color:inherit">← 返回资料搜索</a><h1 data-page-node-id="kJF5Q2l86n5Gn0ZTcfRwTy">图书馆管理系统</h1>
+  <p data-page-node-id="lTwT6Udgg9vMF3WdZDmOmD">数据库课程作业 · 功能演示（Node.js + SQLite，共 13 个后端接口）</p>
+</header>
+
+<div class="wrap" data-page-node-id="VHoV5fgepQwRdnbxfaXRjX">
+  <div class="tip" data-page-node-id="aGUy4j0R434Y10Q0GTpzCw">
+    本页用于演示作业功能。数据库已预置示例图书与读者，可直接在下方操作。<br data-page-node-id="s9qwiTYnLEpULQ2faA2y3V">
+    注意：<b data-page-node-id="JnEMbKBfR78DWjEDxbkEc6">「初始化数据库」会清空并重建全部数据表</b>，误点后可再点一次本页顶部的「重置演示数据」恢复。
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--ink-soft)" data-page-node-id="faVSFiZXym6nzEDp7gmvC5">
+    <h3 data-page-node-id="y4cBKL6oCCcWOfBMKOXai8">演示数据维护</h3>
+    <div class="api" data-page-node-id="YCXqTlQriTYcgPddUN9ifK">/seed</div>
+    <p style="font-size:12px;color:var(--muted);margin:0 0 10px" data-page-node-id="QJwHPwQD0denNub46kdAAO">重建数据表并重新写入示例图书、读者与借阅记录。</p>
+    <button class="ghost" onclick="run('seed','/seed',{},null)" data-page-node-id="0YBjOOXp1X0Bi3sWZySQTe">重置演示数据</button>
+    <div class="out" id="out-seed" data-page-node-id="Ltbsqba2JLx485RBM4gv4l"></div>
+  </div>
+
+  <h2 data-page-node-id="dVFWMLzHxdzJQeJTvyij9V">图书管理</h2>
+  <div class="grid" id="g-book" data-page-node-id="ZyXzro1zR8bWZGdyTA1Tfj"></div>
+
+  <h2 data-page-node-id="j19Kcn8zYsErc4OrAFFXhE">读者管理</h2>
+  <div class="grid" id="g-reader" data-page-node-id="N1I9Ih5JfbiponHfllvuTG"></div>
+
+  <h2 data-page-node-id="y6bR5JTbKeqm4KOYZEM5Fb">借阅管理</h2>
+  <div class="grid" id="g-borrow" data-page-node-id="uCMSFFQiPEMt7OtGV1G978"></div>
+
+  <h2 data-page-node-id="KVxtd3PDs2ll4rESLvM43Z">系统</h2>
+  <div class="grid" id="g-sys" data-page-node-id="LhfYwez1w1RTCX0CcMeFeO"></div>
+
+  <footer data-page-node-id="apT4GFPEl4VZYZdMAOKTwe">
+    <a href="/report.docx" data-page-node-id="EsWZ6tt9HiT5y5lpF8vtl1">下载课程报告（Word）</a> ·
+    <a href="/__index.htm" data-page-node-id="5uLCxtYSR2gFZ0ZANHOrK1">课程自带检验页</a> ·
+    <a href="/__form.htm" data-page-node-id="s728gd6WDFCyyYFFXgjqaH">课程自带表单页</a>
+  </footer>
+</div>
+
+<script>
+const FNS = [
+  {g:'book', key:'addBook', name:'添加图书', api:'/book_func001',
+   fields:[['b_bookid','书号',1],['b_bookname','书名',1],['bCnt','数量',1],['b_bookpub','出版社'],['b_bookdate','出版日期'],['b_bookauthor','作者'],['b_bookmem','备注']]},
+  {g:'book', key:'addCnt', name:'增加库存', api:'/book_func002',
+   fields:[['b_bookid','书号',1],['bCnt','增加数量',1]]},
+  {g:'book', key:'delCnt', name:'减少库存', api:'/book_func003',
+   fields:[['b_bookid','书号',1],['bCnt','减少数量',1]]},
+  {g:'book', key:'updBook', name:'修改图书信息', api:'/book_func004',
+   fields:[['b_bookid','书号',1],['b_bookname','书名',1],['b_bookpub','出版社'],['b_bookdate','出版日期'],['b_bookauthor','作者'],['b_bookmem','备注']]},
+  {g:'book', key:'qBook', name:'查询图书（模糊）', api:'/book_func005', wide:true,
+   fields:[['b_bookid','书号'],['b_bookname','书名'],['b_bookpub','出版社'],['b_bookauthor','作者'],['b_bookmem','备注']],
+   table:['书号','书名','总藏量','可借余量','出版社','出版日期','作者','备注']},
+
+  {g:'reader', key:'addReader', name:'添加读者', api:'/reader_func101',
+   fields:[['r_readerid','借书证号',1],['r_readername','姓名',1],['r_readersex','性别',1],['r_readerdept','单位'],['r_readergrade','年级']]},
+  {g:'reader', key:'delReader', name:'删除读者', api:'/reader_func102',
+   fields:[['r_readerid','借书证号',1]]},
+  {g:'reader', key:'updReader', name:'修改读者信息', api:'/reader_func103',
+   fields:[['r_readerid','借书证号',1],['r_readername','姓名',1],['r_readersex','性别',1],['r_readerdept','单位'],['r_readergrade','年级']]},
+  {g:'reader', key:'qReader', name:'查询读者（模糊）', api:'/reader_func104', wide:true,
+   fields:[['r_readerid','借书证号'],['r_readername','姓名'],['r_readerdept','单位']],
+   table:['借书证号','姓名','性别','单位','年级']},
+  {g:'reader', key:'unret', name:'查看某读者未还书籍', api:'/reader_func105', wide:true,
+   fields:[['r_readerid','借书证号',1]],
+   table:['书号','书名','借阅日期','应还日期','是否超期']},
+
+  {g:'borrow', key:'borrow', name:'借书', api:'/borrow_func201',
+   fields:[['r_readerid','借书证号',1],['b_bookid','书号',1]]},
+  {g:'borrow', key:'ret', name:'还书', api:'/borrow_func202',
+   fields:[['r_readerid','借书证号',1],['b_bookid','书号',1]]},
+  {g:'borrow', key:'overdue', name:'超期读者列表', api:'/borrow_func203', wide:true,
+   fields:[], table:['借书证号','姓名','性别','单位','年级']},
+
+  {g:'sys', key:'init', name:'初始化数据库', api:'/init', fields:[], danger:true}
+];
+
+const GROUPS = {book:'g-book', reader:'g-reader', borrow:'g-borrow', sys:'g-sys'};
+
+function render(){
+  FNS.forEach(f=>{
+    const card = document.createElement('div');
+    card.className = 'card' + (f.wide ? ' wide' : '');
+    let html = '<h3>'+f.name+'</h3><div class="api">POST '+f.api+'</div>';
+    if(f.fields.length){
+      html += '<div class="fields">';
+      f.fields.forEach(fd=>{
+        html += '<div><label>'+fd[1]+(fd[2]?' <span class="req">*</span>':'')+
+                '</label><input id="'+f.key+'_'+fd[0]+'" autocomplete="off"></div>';
+      });
+      html += '</div>';
+    }
+    html += '<button class="'+(f.danger?'warn':'')+'" onclick="submitFn(\''+f.key+'\')">执行</button>';
+    html += '<div class="out" id="out-'+f.key+'"></div>';
+    card.innerHTML = html;
+    document.getElementById(GROUPS[f.g]).appendChild(card);
+  });
+}
+
+function submitFn(key){
+  const f = FNS.find(x=>x.key===key);
+  const body = {};
+  f.fields.forEach(fd=>{
+    const v = (document.getElementById(key+'_'+fd[0]).value||'').trim();
+    if(v) body[fd[0]] = v;
+  });
+  if(f.danger && !confirm('初始化会清空并重建全部数据表，确定继续吗？')) return;
+  run(key, f.api, body, f.table);
+}
+
+function run(key, url, body, headers){
+  const out = document.getElementById('out-'+key);
+  out.style.display='block';
+  out.className='out';
+  out.innerHTML = '<div class="msg">请求中…</div>';
+
+  const form = new URLSearchParams();
+  for(const k in body) form.append(k, body[k]);
+
+  fetch(url, {method:'POST', body:form})
+    .then(r=>r.text())
+    .then(html=>{
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const node = doc.getElementById('result');
+      if(!node){ out.className='out err'; out.innerHTML='<div class="msg">未能解析返回结果</div>'; return; }
+      if(node.tagName.toLowerCase()==='table'){
+        const rows = node.querySelectorAll('tr');
+        if(!rows.length){ out.className='out'; out.innerHTML='<div class="empty">查询结果为空</div>'; return; }
+        let t = '<table>';
+        if(headers){ t += '<tr>'+headers.map(h=>'<th>'+h+'</th>').join('')+'</tr>'; }
+        rows.forEach(tr=>{
+          t += '<tr>';
+          tr.querySelectorAll('td').forEach(td=>{ t += '<td>'+(td.textContent||'')+'</td>'; });
+          t += '</tr>';
+        });
+        out.className='out';
+        out.innerHTML = t+'</table><div class="empty">共 '+rows.length+' 条记录</div>';
+      } else {
+        const code = (node.textContent||'').trim();
+        const msg = (doc.body.textContent||'').replace(code,'').trim();
+        if(code === '0'){ out.className='out ok'; out.innerHTML='<div class="msg">成功：'+(msg||'操作已完成')+'</div>'; }
+        else { out.className='out err'; out.innerHTML='<div class="msg">返回码 '+code+'：'+(msg||'操作未成功')+'</div>'; }
+      }
+    })
+    .catch(e=>{ out.className='out err'; out.innerHTML='<div class="msg">请求失败：'+e+'</div>'; });
+}
+
+render();
+
+// 页面加载后自动展示已预置的演示数据，老师打开即可见（无需先手动查询）
+window.addEventListener('load', function(){
+  setTimeout(function(){
+    run('qBook','/book_func005',{},['书号','书名','总藏量','可借余量','出版社','出版日期','作者','备注']);
+    run('qReader','/reader_func104',{},['借书证号','姓名','性别','单位','年级']);
+    run('overdue','/borrow_func203',{},['借书证号','姓名','性别','单位','年级']);
+  }, 800);
+});
+</script>
+</body>
+</html>

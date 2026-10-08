@@ -1,0 +1,114 @@
+/* Warm mechanical controls. Original implementation; reference rationale in docs/动效设计.md. */
+:root{
+ --key-light:#fff6df;
+ --key-mid:#ddc8a3;
+ --key-dark:#806341;
+ --key-base:#60462e;
+ --key-raised:inset 1px 1px 0 var(--key-light),inset -1px -1px 0 #ad9270,0 3px 0 var(--key-base),0 4px 3px #39271226;
+ --key-sunken:inset 2px 2px 2px #50371f66,inset -1px -1px 0 #fff1d1,0 1px 0 #755537;
+ --ease-settle:cubic-bezier(.2,.7,.3,1);
+}
+/* translate is independent of existing layout transforms; no margin/padding changes on press. */
+:root body :is(button,a.button):not(:where(.book-row,.rank-book,.tag,.quote-link,#rank-caption,footer button,.selection-tools button)){
+ border-color:#887050;
+ box-shadow:var(--key-raised);
+ transition:translate 90ms var(--ease-settle),box-shadow 90ms var(--ease-settle),filter 120ms ease,background-color 120ms ease;
+ -webkit-tap-highlight-color:transparent;
+ touch-action:manipulation;
+}
+:root body :is(button,a.button):not(:where(.book-row,.rank-book,.tag,.quote-link,#rank-caption,footer button,.selection-tools button)):is(:active,.key-held):not(:disabled){
+ translate:0 2px;
+ box-shadow:var(--key-sunken);
+ border-color:#6b5032 #c5ad83 #c5ad83 #6b5032;
+ filter:brightness(.97);
+ transition-duration:35ms;
+}
+:root body :is(button,a.button).primary{
+ --key-raised:inset 1px 1px 0 #d8b989,inset -1px -1px 0 #2d1c10,0 4px 0 #382516,0 5px 4px #39271233;
+ --key-sunken:inset 2px 3px 4px #1f100bb0,inset -1px -1px 0 #ae8a57,0 1px 0 #382516;
+}
+:root body :is(.desktop-controls,.window-controls,.titlebar) button{
+ --key-raised:inset 1px 1px 0 #fff9e9,inset -1px -1px 0 #9b815e,0 1px 0 #4e3926;
+ --key-sunken:inset 1px 1px 1px #634728,inset -1px -1px 0 #f9e8c9;
+}
+:root body :is(.desktop-controls,.window-controls,.titlebar) button:is(:active,.key-held){translate:1px 1px}
+:root body :is(.rank-tabs,.note-tabs) button[aria-pressed=true]{
+ box-shadow:inset 1px 2px 2px #6c4c2b4d,inset -1px -1px 0 #fff1d5;
+ background-color:#dfc59d;
+ border-color:#9b784c #cfb78f #cfb78f #9b784c;
+}
+:root body button:disabled{
+ translate:none;
+ filter:none;
+ box-shadow:inset 1px 1px 0 #f4ecdb,inset -1px -1px 0 #b6a78f;
+ color:#897b66;
+ text-shadow:1px 1px #fff4db;
+ cursor:not-allowed;
+}
+:root body :is(button,a.button):focus-visible{
+ outline:1px dotted currentColor;
+ outline-offset:-5px;
+}
+:root body :is(a:not(.button),input,textarea,select):focus-visible{outline:2px solid #967142;outline-offset:2px}
+@media(hover:hover) and (pointer:fine){
+ :root body :is(button,a.button):not(:where(.book-row,.rank-book,.tag,.quote-link,#rank-caption,footer button,.selection-tools button)):hover:not(:disabled){filter:brightness(1.045)}
+ :root body :is(button,a.button):is(:active,.key-held):hover:not(:disabled){filter:brightness(.97)}
+ .book-row:hover:not([aria-pressed=true]){background:#ead4b54d;box-shadow:inset 3px 0 0 #b28a51}
+ .rank-book:hover strong{color:#876035;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px}
+ .rank-tags .tag:hover{color:#48301a;background:#dec395}
+ .features button:hover .sprite{translate:0 -1px}
+ .selection-tools button:hover{background:#ffffff14}
+}
+.book-row{transition:background-color 110ms ease,box-shadow 110ms ease}
+.book-row:is(:active,.key-held){background:#dcc095;box-shadow:inset 0 0 0 2px #927045}
+.features .sprite{transition:translate 100ms var(--ease-settle)}
+.features button:is(:active,.key-held) .sprite{translate:0 1px}
+.selection-tools button{transition:background-color 80ms,translate 70ms}
+.selection-tools button:is(:active,.key-held){translate:0 1px;background:#24140755}
+.rank-tags .tag,.rank-book,footer button{transition:color 100ms,background-color 100ms}
+.rank-tags .tag:is(:active,.key-held),footer button:is(:active,.key-held){color:#442b14;background-color:#dbc195}
+input:not([type=radio]):not([type=checkbox]),textarea,select{transition:border-color 110ms,box-shadow 110ms}
+input:not([type=radio]):not([type=checkbox]):focus,textarea:focus,select:focus{border-color:#886033;box-shadow:inset 1px 2px 3px #62462d24,0 0 0 1px #e4c799}
+/* A window becomes active when interacted with, without moving or covering its neighbours. */
+.workspace>.window,.ranking{transition:box-shadow 140ms ease,border-color 140ms ease}
+.window:focus-within:not(dialog),.window.window-current:not(dialog){border-color:#74512e;box-shadow:inset 2px 2px #fff8e7,inset -2px -2px #9e8765,0 2px 5px #40291133}
+.window.window-current>.titlebar,.window:focus-within>.titlebar{background:linear-gradient(90deg,#805f3b,#433020)}
+/* Native dialog semantics / Escape / focus return remain intact. Unsupported browsers open immediately. */
+@supports (transition-behavior:allow-discrete){
+ dialog.window{
+  opacity:0;translate:0 7px;
+  transition:opacity 150ms ease,translate 170ms var(--ease-settle),display 170ms allow-discrete,overlay 170ms allow-discrete;
+ }
+ dialog.window[open]{opacity:1;translate:0 0;box-shadow:inset 2px 2px #fff8e8,inset -2px -2px #9e8e75,5px 8px 0 #3b281b24,0 16px 35px #291a1438}
+ dialog.window::backdrop{background-color:#30241900;transition:background-color 150ms ease,display 170ms allow-discrete,overlay 170ms allow-discrete}
+ dialog.window[open]::backdrop{background-color:#30241977}
+ @starting-style{
+  dialog.window[open]{opacity:0;translate:0 7px}
+  dialog.window[open]::backdrop{background-color:#30241900}
+ }
+}
+#private-panel:not([hidden]),#public-panel:not([hidden]){animation:paper-tab-in 140ms var(--ease-settle)}
+#font-options:not([hidden]),#chapter-options:not([hidden]){animation:paper-menu-in 120ms var(--ease-settle);transform-origin:top left}
+@keyframes paper-tab-in{from{opacity:.6;translate:0 3px}to{opacity:1;translate:0 0}}
+@keyframes paper-menu-in{from{opacity:0;translate:0 -3px}to{opacity:1;translate:0 0}}
+#message:not(:empty){animation:notice-in 160ms var(--ease-settle);box-shadow:inset 1px 1px #cfb185,inset -1px -1px #302010,2px 3px 0 #32221455}
+@keyframes notice-in{from{opacity:0;translate:0 5px}to{opacity:1;translate:0 0}}
+/* Optional preference, accessible from footer; controls retain their instant pressed bevel. */
+:root[data-motion=quiet] *, :root[data-motion=quiet] *::before, :root[data-motion=quiet] *::after, :root[data-motion=quiet] dialog::backdrop{
+ animation:none!important;transition:none!important;scroll-behavior:auto!important;
+}
+:root[data-motion=quiet] :is(button,a.button),:root[data-motion=quiet] .sprite{translate:none!important}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after,dialog::backdrop{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+ :is(button,a.button),.sprite{translate:none!important}
+}
+#motion-open{font-size:12px;border:0;box-shadow:none;padding:0 4px;background:none;text-decoration:underline}
+#motion-dialog{width:520px}
+#motion-dialog .dialog-body{font-size:16px;line-height:1.65}
+.motion-demo{display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:18px 0}
+.motion-demo button{min-width:110px;padding:9px 16px}
+.motion-choice{display:flex;align-items:center;gap:9px;font-size:15px}
+.motion-choice input{width:auto;box-shadow:none;accent-color:#795532}
+#motion-sample-state{min-height:25px;margin:8px 0 0;font-size:14px;color:#795d3c}
+
+#motion-dialog .titlebar{display:flex;justify-content:space-between;align-items:center}#motion-dialog .titlebar button{margin-left:auto}

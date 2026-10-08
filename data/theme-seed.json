@@ -1,0 +1,100 @@
+[
+  {
+    "id": "repair-reading",
+    "title": "修复之前：读懂条件",
+    "english": "Before You Repair",
+    "author": "BOOKLOOP 原创共读练习（AI 辅助编写）",
+    "kind": "article",
+    "url": "https://www.epa.gov/recycle/what-you-can-do",
+    "language": "en",
+    "rights": "本站原创教学练习；来源链接为延伸阅读，正文并非该来源原文或引文。",
+    "description": "材料再利用主题馆 · 练习区分条件、证据和个人判断；不作为实际维修操作指南。",
+    "tags": [
+      "REPAIR",
+      "REUSE",
+      "EVIDENCE"
+    ],
+    "version": "theme-repair-v1",
+    "chapters": [
+      {
+        "title": "1 · Conditions",
+        "start": 0
+      },
+      {
+        "title": "2 · Evidence",
+        "start": 2
+      },
+      {
+        "title": "3 · Next reader",
+        "start": 4
+      }
+    ],
+    "paragraphs": [
+      "A repair may extend an object's useful life, provided that the repaired object remains suitable for its intended use.",
+      "In this sentence, provided that introduces a condition. The sentence does not promise that every repair is safe or useful. What information would you need before applying it to a real object?",
+      "A visible improvement is not, by itself, evidence that a repair has restored the object's original performance.",
+      "Compare two claims: the object looks better, and the object performs as required. Explain what evidence would support each claim, and what remains unknown.",
+      "Leave the next reader a note that separates what you observed, what you inferred, and what you still need to check.",
+      "Reading task: choose one sentence, ask a precise question, and support your reply with a reference to this text or a source you have checked."
+    ]
+  },
+  {
+    "id": "reuse-reading",
+    "title": "再利用：比较的边界",
+    "english": "What Does Reuse Replace?",
+    "author": "BOOKLOOP 原创共读练习（AI 辅助编写）",
+    "kind": "article",
+    "url": "https://www.epa.gov/recycle/what-you-can-do",
+    "language": "en",
+    "rights": "本站原创教学练习；来源链接为延伸阅读，正文并非该来源原文或引文。",
+    "description": "材料再利用主题馆 · 练习理解替代关系；不预设减排数字或效果。",
+    "tags": [
+      "REUSE",
+      "CONTEXT",
+      "EVIDENCE"
+    ],
+    "version": "theme-reuse-v1",
+    "chapters": [
+      {
+        "title": "1 · Comparison",
+        "start": 0
+      },
+      {
+        "title": "2 · Revision",
+        "start": 2
+      }
+    ],
+    "paragraphs": [
+      "To evaluate a reuse proposal, first describe the alternative it is being compared with. Reusing an object and avoiding a new purchase are not necessarily the same event.",
+      "The word necessarily matters. It leaves room for situations in which the proposed reuse does not replace the activity assumed in the comparison.",
+      "A useful explanation names its assumptions. It also identifies the information that could change its conclusion.",
+      "Reading task: write your first interpretation, discuss the sentence with another reader, and record which part of your interpretation changed. A disagreement can be informative even when it remains unresolved."
+    ]
+  },
+  {
+    "id": "epa-reuse-excerpt",
+    "title": "再利用原文：物品的使用状态",
+    "english": "Reuse: Still Operating",
+    "author": "US EPA",
+    "kind": "article",
+    "url": "https://www.epa.gov/recycle/what-you-can-do",
+    "language": "en",
+    "rights": "US EPA 网页 eCycling 小节的短引文；省略号表示未收录后半句。请通过来源核对完整上下文。",
+    "description": "材料再利用主题馆 · 真实英文来源短引文。讨论 still operating 对适用条件的限定。核对日期：2026-10-04。",
+    "tags": [
+      "REUSE",
+      "CONTEXT",
+      "EVIDENCE"
+    ],
+    "version": "epa-what-you-can-do-2026-10-04",
+    "chapters": [
+      {
+        "title": "eCycling · 短引文",
+        "start": 0
+      }
+    ],
+    "paragraphs": [
+      "Donating used (but still operating) electronics for reuse extends the lives of valuable products…"
+    ]
+  }
+]

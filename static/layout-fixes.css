@@ -1,0 +1,26 @@
+/* Keep legacy tablet rules from pushing the third window beneath the desktop grid. */
+.workspace{height:auto;min-height:377px;grid-template-columns:minmax(0,432fr) minmax(0,620fr) minmax(0,446fr)}
+.workspace>.annotations{grid-column:auto;grid-row:auto}
+.annotations>.window-body{max-width:none;width:100%}
+.rank-tags{grid-column:auto}
+.desktop footer{position:relative;clear:both;height:auto;min-height:33px;flex-wrap:wrap;gap:4px}
+/* Dialogs belong to the viewport, never to the scaled desktop layout. */
+dialog.window{position:fixed;inset:0;margin:auto;height:fit-content;max-height:calc(100dvh - 32px);max-width:calc(100vw - 32px);box-sizing:border-box;overflow:auto;opacity:1;translate:none;zoom:1}
+dialog.window:not([open]){display:none}
+dialog.window[open]{display:block;opacity:1;translate:none}
+dialog.window::backdrop{background:#30241999}
+#account-dialog{width:440px}
+#account-dialog .titlebar{display:flex;justify-content:space-between;align-items:center;gap:16px;font-size:16px;letter-spacing:0;padding:5px 8px}
+#account-dialog .titlebar button{margin-left:auto;min-width:27px;min-height:27px}
+#account-dialog .dialog-body{padding:20px 24px;font-size:15px;line-height:1.5}
+#account-dialog .note-tabs{display:flex;gap:8px}
+#account-dialog .note-tabs button{flex:1;font-size:16px;padding:8px}
+#account-dialog label{display:block;margin:12px 0 5px;font-size:15px}
+#account-dialog input{display:block;width:100%;min-width:0;padding:9px 10px;font-size:16px}
+#account-dialog #account-submit{width:100%;font-size:16px;letter-spacing:0;padding:10px}
+@media(max-width:999px){
+ .workspace{grid-template-columns:minmax(0,1fr);height:auto;min-height:0}
+ .workspace>.annotations{grid-column:auto}
+ .rank-tags{grid-column:auto}
+ .desktop.focus .workspace{height:auto}
+}
